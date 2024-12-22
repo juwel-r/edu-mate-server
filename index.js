@@ -22,7 +22,17 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
+    const tutorials = client.db("Edu_Mate").collection("tutorials");
+    const bookedTutorials = client
+      .db("Edu_Mate")
+      .collection("booked_tutorials");
 
+    app.post("/add-tutorial",async (req, res) => {
+      const tutorialData = req.body;
+      const result =await tutorials.insertOne(tutorialData);
+      console.log(result);
+      res.send(result);
+    });
   } finally {
   }
 }
