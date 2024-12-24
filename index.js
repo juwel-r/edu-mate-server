@@ -26,6 +26,7 @@ async function run() {
     const bookedTutorials = client
       .db("Edu_Mate")
       .collection("booked_tutorials");
+
     // Create Data
     app.post("/tutorials", async (req, res) => {
       const tutorialData = req.body;
@@ -36,9 +37,15 @@ async function run() {
 
     // Get Data
     app.get("/tutorials", async (req, res) => {
+      const email = req.query.email;
+      if (email) {
+        const result = await tutorials.find({ email: email }).toArray();
+        res.send(result);
+        console.log(result);
+      } else {
       const result = await tutorials.find().toArray();
-      res.send(result);
-    });
+        console.log(result);
+    }});
 
     // get single data
     app.get("/tutor/:id", async (req, res) => {
@@ -54,6 +61,7 @@ async function run() {
       res.send(result);
     });
 
+    
     // Increase Review with $inc operator
     app.put("/tutorials/:id", async (req, res) => {
       const id = req.params.id;
