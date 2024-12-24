@@ -54,6 +54,19 @@ async function run() {
       res.send(result);
     });
 
+    // Increase Review with $inc operator
+    app.put("/tutorials/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await tutorials.updateOne(
+        { _id: new ObjectId(id) },
+        {
+          $inc: { review: 1 },
+        }
+      );
+      console.log(result);
+      res.send(result);
+    });
+
     // Booked Tutorial Section
     app.post("/booked-tutorials", async (req, res) => {
       const bookedTutorialData = req.body;
@@ -72,8 +85,10 @@ async function run() {
         const tutorial = await tutorials.findOne({
           _id: new ObjectId(bookedTutorial.tutorId),
         });
+        bookedTutorial.tutorName = tutorial.name;
         bookedTutorial.review = tutorial.review;
       }
+      console.log(result);
       res.send(result);
     });
   } finally {
