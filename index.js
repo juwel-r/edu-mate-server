@@ -53,6 +53,29 @@ async function run() {
       const result = await tutorials.find({ category: category }).toArray();
       res.send(result);
     });
+
+    // Booked Tutorial Section
+    app.post("/booked-tutorials", async (req, res) => {
+      const bookedTutorialData = req.body;
+      const result = await bookedTutorials.insertOne(bookedTutorialData);
+      console.log(result);
+      res.send(result);
+    });
+
+    // Get data by query from email
+    app.get("/booked-tutorials", async (req, res) => {
+      const email = req.query.email;
+      const result = await bookedTutorials
+        .find({ studentEmail: email })
+        .toArray();
+      for (const bookedTutorial of result) {
+        const tutorial = await tutorials.findOne({
+          _id: new ObjectId(bookedTutorial.tutorId),
+        });
+        bookedTutorial.review = tutorial.review;
+      }
+      res.send(result);
+    });
   } finally {
   }
 }
