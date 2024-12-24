@@ -41,11 +41,11 @@ async function run() {
       if (email) {
         const result = await tutorials.find({ email: email }).toArray();
         res.send(result);
-        console.log(result);
       } else {
-      const result = await tutorials.find().toArray();
-        console.log(result);
-    }});
+        const result = await tutorials.find().toArray();
+        res.send(result);
+      }
+    });
 
     // get single data
     app.get("/tutor/:id", async (req, res) => {
@@ -61,7 +61,6 @@ async function run() {
       res.send(result);
     });
 
-    
     // Increase Review with $inc operator
     app.put("/tutorials/:id", async (req, res) => {
       const id = req.params.id;
@@ -75,7 +74,36 @@ async function run() {
       res.send(result);
     });
 
-    // Booked Tutorial Section
+    // Update Data
+    app.put("/tutorials", async (req, res) => {
+      const tutorialData = req.body;
+      console.log(tutorialData);
+      const filter = { _id: new ObjectId(tutorialData._id) };
+      const options = { upsert: true };
+      const updateData = {
+        $set: {
+          name: tutorialData.name,
+          email: tutorialData.email,
+          photoURL: tutorialData.photoURL,
+          category: tutorialData.category,
+          price: tutorialData.price,
+          review: tutorialData.review,
+          description: tutorialData.description,
+        },
+      };
+      const result = await tutorials.updateOne(filter, updateData, options);
+      res.send(result);
+    });
+
+    // Delete Data
+    app.delete("/tutorials/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await tutorials.deleteOne({ _id: new ObjectId(id) });
+      console.log(result);
+      res.send(result);
+    });
+
+    // Booked Tutorial Section ==============================
     app.post("/booked-tutorials", async (req, res) => {
       const bookedTutorialData = req.body;
       const result = await bookedTutorials.insertOne(bookedTutorialData);
