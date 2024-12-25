@@ -31,21 +31,35 @@ async function run() {
     app.post("/tutorials", async (req, res) => {
       const tutorialData = req.body;
       const result = await tutorials.insertOne(tutorialData);
-      console.log(result);
       res.send(result);
     });
 
     // Get Data
     app.get("/tutorials", async (req, res) => {
       const email = req.query.email;
+
       if (email) {
+        console.log(email);
         const result = await tutorials.find({ email: email }).toArray();
-        res.send(result);
-      } else {
-        const result = await tutorials.find().toArray();
         res.send(result);
       }
     });
+
+    // Get data by search
+    app.get("/tutorials/search", async (req, res) => {
+      const value = req.query.search;
+      console.log(value);
+      let option = {};
+      if (value) {
+        option = { category: { $regex: value, $options: "i" } };
+        const result = await tutorials.find(option).toArray();
+        res.send(result);  // First response sent here
+      }
+      else {
+        const result = await tutorials.find().toArray();
+        res.send(result);
+      }
+    })
 
     // get single data
     app.get("/tutor/:id", async (req, res) => {
@@ -70,14 +84,12 @@ async function run() {
           $inc: { review: 1 },
         }
       );
-      console.log(result);
       res.send(result);
     });
 
     // Update Data
     app.put("/tutorials", async (req, res) => {
       const tutorialData = req.body;
-      console.log(tutorialData);
       const filter = { _id: new ObjectId(tutorialData._id) };
       const options = { upsert: true };
       const updateData = {
@@ -99,7 +111,6 @@ async function run() {
     app.delete("/tutorials/:id", async (req, res) => {
       const id = req.params.id;
       const result = await tutorials.deleteOne({ _id: new ObjectId(id) });
-      console.log(result);
       res.send(result);
     });
 
@@ -107,7 +118,6 @@ async function run() {
     app.post("/booked-tutorials", async (req, res) => {
       const bookedTutorialData = req.body;
       const result = await bookedTutorials.insertOne(bookedTutorialData);
-      console.log(result);
       res.send(result);
     });
 
@@ -124,7 +134,6 @@ async function run() {
         bookedTutorial.tutorName = tutorial?.name;
         bookedTutorial.review = tutorial?.review;
       }
-      console.log(result);
       res.send(result);
     });
   } finally {
