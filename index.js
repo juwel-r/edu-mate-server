@@ -121,8 +121,8 @@ async function run() {
         const tutorial = await tutorials.findOne({
           _id: new ObjectId(bookedTutorial.tutorId),
         });
-        bookedTutorial.tutorName = tutorial.name;
-        bookedTutorial.review = tutorial.review;
+        bookedTutorial.tutorName = tutorial?.name;
+        bookedTutorial.review = tutorial?.review;
       }
       console.log(result);
       res.send(result);
