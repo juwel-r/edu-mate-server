@@ -34,18 +34,14 @@ async function run() {
       res.send(result);
     });
 
-    // Get Data
-    app.get("/tutorials", async (req, res) => {
-      const email = req.query.email;
-
-      if (email) {
-        console.log(email);
-        const result = await tutorials.find({ email: email }).toArray();
-        res.send(result);
-      }
+    // get single data
+    app.get("/tutor/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await tutorials.findOne({ _id: new ObjectId(id) });
+      res.send(result);
     });
 
-    // Get data by search
+    // Get all data and by search query
     app.get("/tutorials/search", async (req, res) => {
       const value = req.query.search;
       console.log(value);
@@ -53,19 +49,21 @@ async function run() {
       if (value) {
         option = { category: { $regex: value, $options: "i" } };
         const result = await tutorials.find(option).toArray();
-        res.send(result);  // First response sent here
-      }
-      else {
+        res.send(result);
+      } else {
         const result = await tutorials.find().toArray();
         res.send(result);
       }
-    })
+    });
 
-    // get single data
-    app.get("/tutor/:id", async (req, res) => {
-      const id = req.params.id;
-      const result = await tutorials.findOne({ _id: new ObjectId(id) });
-      res.send(result);
+    // Get Data by query (email)
+    app.get("/tutorials", async (req, res) => {
+      const email = req.query.email;
+      if (email) {
+        console.log(email);
+        const result = await tutorials.find({ email: email }).toArray();
+        res.send(result);
+      }
     });
 
     // get data by category
