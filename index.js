@@ -1,12 +1,37 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const port = process.env.PORT || 5000;
 
 app.use(express.json());
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "https://edu-mate-24f55.web.app",
+      "https://edu-mate-24f55.firebaseapp.com",
+    ],
+    credentials: true,
+  })
+);
+app.use(cookieParser());
+
+// Verify Client Token
+const tokenVerify = (req, res, next) => {
+  const token = req.cookies.jwtToken;
+  if (!token) return res.status(401).send({ message: "Unauthorize Access" });
+  jwt.verify(token, process.env.JWT_SECRET_KEY, (error, decode) => {
+    if (error) return res.status(401).send({ message: "Unauthorize Access" });
+    else {
+      req.user = decode;
+      next();
+    }
+  });
+};
 
 const uri = `mongodb+srv://${process.env.USER_ID}:${process.env.PASSWORD}@cluster0.hjkzu.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
@@ -27,9 +52,43 @@ async function run() {
       .db("Edu_Mate")
       .collection("booked_tutorials");
 
+    // ==============================> JWT Authentication <==============================
+    // Create Token
+    app.post("/jwt", (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.JWT_SECRET_KEY, {
+        expiresIn: "12h",
+      });
+      res
+        .cookie("jwtToken", token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+        })
+        .send({ success: true });
+    });
+
+    // Clear Token when logout
+    app.post("/clear-token", (req, res) => {
+      res
+        .clearCookie("jwtToken", {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+        })
+        .send({ clearToken: true });
+    });
+
+    // ============> API <============= //
     // Create Data
-    app.post("/tutorials", async (req, res) => {
+    
+    
+    app.post("/tutorials", tokenVerify, async (req, res) => {
       const tutorialData = req.body;
+
+      if (req.user.email !== tutorialData.email)
+        return res.status(403).send({ message: "Access Forbidden" });
+
       const result = await tutorials.insertOne(tutorialData);
       res.send(result);
     });
@@ -43,11 +102,10 @@ async function run() {
 
     // Get all data and by search query
     app.get("/tutorials/search", async (req, res) => {
-      const value = req.query.search;
-      console.log(value);
+      const search = req.query.value;
       let option = {};
-      if (value) {
-        option = { category: { $regex: value, $options: "i" } };
+      if (search) {
+        option = { category: { $regex: search, $options: "i" } };
         const result = await tutorials.find(option).toArray();
         res.send(result);
       } else {
@@ -57,10 +115,13 @@ async function run() {
     });
 
     // Get Data by query (email)
-    app.get("/tutorials", async (req, res) => {
+    app.get("/tutorials", tokenVerify, async (req, res) => {
       const email = req.query.email;
+
+      if (req.user.email !== email)
+        return res.status(403).send({ message: "Access Forbidden" });
+
       if (email) {
-        console.log(email);
         const result = await tutorials.find({ email: email }).toArray();
         res.send(result);
       }
@@ -76,12 +137,7 @@ async function run() {
     // Increase Review with $inc operator
     app.put("/tutorials/:id", async (req, res) => {
       const id = req.params.id;
-      const result = await tutorials.updateOne(
-        { _id: new ObjectId(id) },
-        {
-          $inc: { review: 1 },
-        }
-      );
+      const result = await tutorials.updateOne({ _id: new ObjectId(id) },{$inc: { review: 1 }});
       res.send(result);
     });
 
@@ -119,9 +175,13 @@ async function run() {
       res.send(result);
     });
 
-    // Get data by query from email
-    app.get("/booked-tutorials", async (req, res) => {
+    // Get data by  email query
+    app.get("/booked-tutorials", tokenVerify, async (req, res) => {
       const email = req.query.email;
+
+      if (req.user.email !== email)
+        return res.status(403).send({ message: "Access Forbidden" });
+
       const result = await bookedTutorials
         .find({ studentEmail: email })
         .toArray();
@@ -145,3 +205,8 @@ app.get("/", (req, res) => {
 app.listen(port, () => {
   console.log("Server is running on: ", port);
 });
+
+
+
+
+
