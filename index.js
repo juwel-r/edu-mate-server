@@ -34,7 +34,7 @@ const tokenVerify = (req, res, next) => {
 };
 
 const uri = `mongodb+srv://${process.env.USER_ID}:${process.env.PASSWORD}@cluster0.hjkzu.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
-
+console.log(process.env.PASSWORD, process.env.USER_ID);
 // const uri = "mongodb://localhost:27017";
 
 const client = new MongoClient(uri, {
@@ -81,8 +81,7 @@ async function run() {
 
     // ============> API <============= //
     // Create Data
-    
-    
+
     app.post("/tutorials", tokenVerify, async (req, res) => {
       const tutorialData = req.body;
 
@@ -127,6 +126,21 @@ async function run() {
       }
     });
 
+    // language Count each category
+    app.get("/tutorials/count", async (req, res) => {
+      const result = await tutorials
+        .aggregate([
+          {
+            $group: {
+              _id: "$category",
+              count: { $sum: 1 },
+            },
+          },
+        ])
+        .toArray();
+      res.send(result);
+    });
+
     // get data by category
     app.get("/tutorials/:category", async (req, res) => {
       const category = req.params.category;
@@ -137,7 +151,10 @@ async function run() {
     // Increase Review with $inc operator
     app.put("/tutorials/:id", async (req, res) => {
       const id = req.params.id;
-      const result = await tutorials.updateOne({ _id: new ObjectId(id) },{$inc: { review: 1 }});
+      const result = await tutorials.updateOne(
+        { _id: new ObjectId(id) },
+        { $inc: { review: 1 } }
+      );
       res.send(result);
     });
 
@@ -205,8 +222,3 @@ app.get("/", (req, res) => {
 app.listen(port, () => {
   console.log("Server is running on: ", port);
 });
-
-
-
-
-
